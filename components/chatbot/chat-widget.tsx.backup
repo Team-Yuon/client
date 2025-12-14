@@ -1,0 +1,820 @@
+"use client"
+
+import type React from "react"
+import { useState, useRef, useEffect } from "react"
+import {
+  MessageSquare,
+  Send,
+  ChevronLeft,
+  Paperclip,
+  Home,
+  ThumbsUp,
+  ThumbsDown,
+  Check,
+  CheckCheck,
+  HelpCircle,
+  FileText,
+  Phone,
+  Settings2,
+  Trash2,
+  Pencil,
+  Plus,
+} from "lucide-react"
+import { cn } from "@/lib/utils"
+
+interface Message {
+  id: string
+  content: string
+  sender: "user" | "agent" | "system"
+  timestamp: Date
+  isRead?: boolean
+  showFeedback?: boolean
+  feedbackGiven?: "up" | "down" | null
+}
+
+interface ChatRoom {
+  id: string
+  name: string
+  avatar: string
+  avatarStyle: string
+  lastMessage: string
+  time: string
+  unread: boolean
+  status: "online" | "offline" | "busy"
+}
+
+interface QuickReply {
+  id: string
+  label: string
+  icon?: React.ReactNode
+}
+
+const chatRooms: ChatRoom[] = [
+  {
+    id: "1",
+    name: "고객지원팀",
+    avatar: "CS",
+    avatarStyle: "bg-gradient-to-br from-[#667eea] to-[#764ba2]",
+    lastMessage: "주문하신 상품이 오늘 출고 예정입니다",
+    time: "2분 전",
+    unread: true,
+    status: "online",
+  },
+  {
+    id: "2",
+    name: "기술지원팀",
+    avatar: "기술",
+    avatarStyle: "bg-gradient-to-br from-[#f093fb] to-[#f5576c]",
+    lastMessage: "문제가 해결되셨나요?",
+    time: "1시간 전",
+    unread: false,
+    status: "online",
+  },
+  {
+    id: "3",
+    name: "영업팀",
+    avatar: "영업",
+    avatarStyle: "bg-gradient-to-br from-[#4facfe] to-[#00f2fe]",
+    lastMessage: "견적서 확인 부탁드립니다",
+    time: "어제",
+    unread: false,
+    status: "offline",
+  },
+]
+
+const quickReplies: QuickReply[] = [
+  { id: "1", label: "자주 묻는 질문", icon: <HelpCircle className="h-4 w-4" /> },
+  { id: "2", label: "이용 가이드", icon: <FileText className="h-4 w-4" /> },
+  { id: "3", label: "상담원 연결", icon: <Phone className="h-4 w-4" /> },
+]
+
+const welcomeMessage: Message = {
+  id: "welcome",
+  content: "안녕하세요! 무엇을 도와드릴까요?\n아래 버튼을 선택하거나 직접 질문해 주세요.",
+  sender: "agent",
+  timestamp: new Date(),
+  isRead: true,
+}
+
+export function ChatWidget() {
+  const [isOpen, setIsOpen] = useState(false)
+  const [activeTab, setActiveTab] = useState<"home" | "chat">("home")
+  const [chatView, setChatView] = useState<"list" | "detail">("list")
+  const [selectedRoom, setSelectedRoom] = useState<ChatRoom | null>(null)
+  const [messages, setMessages] = useState<Message[]>([welcomeMessage])
+  const [inputValue, setInputValue] = useState("")
+  const [isTyping, setIsTyping] = useState(false)
+  const [rooms, setRooms] = useState<ChatRoom[]>(chatRooms)
+  const [showBubble, setShowBubble] = useState(true)
+  const messagesEndRef = useRef<HTMLDivElement>(null)
+  const inputRef = useRef<HTMLTextAreaElement>(null)
+  const [isManaging, setIsManaging] = useState(false)
+  const [editingRoomId, setEditingRoomId] = useState<string | null>(null)
+  const [editingName, setEditingName] = useState("")
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
+  }
+
+  useEffect(() => {
+    scrollToBottom()
+  }, [messages])
+
+  useEffect(() => {
+    if (chatView === "detail" && inputRef.current) {
+      inputRef.current.focus()
+    }
+  }, [chatView])
+
+  useEffect(() => {
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto"
+      inputRef.current.style.height = Math.min(inputRef.current.scrollHeight, 120) + "px"
+    }
+  }, [inputValue])
+
+  useEffect(() => {
+    const timer = setTimeout(() => setShowBubble(false), 5000)
+    return () => clearTimeout(timer)
+  }, [])
+
+  const handleRoomClick = (room: ChatRoom) => {
+    setSelectedRoom(room)
+    setChatView("detail")
+    setRooms((prev) => prev.map((r) => (r.id === room.id ? { ...r, unread: false } : r)))
+    setMessages([
+      {
+        id: "1",
+        content: "안녕하세요! 무엇을 도와드릴까요?",
+        sender: "agent",
+        timestamp: new Date(Date.now() - 1000 * 60 * 4),
+        isRead: true,
+      },
+      {
+        id: "2",
+        content: "주문한 상품 배송 조회 부탁드립니다",
+        sender: "user",
+        timestamp: new Date(Date.now() - 1000 * 60 * 2),
+        isRead: true,
+      },
+      {
+        id: "3",
+        content: "주문하신 상품이 오늘 출고 예정입니다. 배송 조회는 마이페이지에서 확인하실 수 있습니다.",
+        sender: "agent",
+        timestamp: new Date(),
+        isRead: true,
+        showFeedback: true,
+      },
+    ])
+  }
+
+  const handleNewChat = () => {
+    setActiveTab("chat")
+    setChatView("detail")
+    setSelectedRoom({
+      id: "new",
+      name: "AI 상담 도우미",
+      avatar: "AI",
+      avatarStyle: "bg-gradient-to-br from-[#667eea] to-[#764ba2]",
+      lastMessage: "",
+      time: "",
+      unread: false,
+      status: "online",
+    })
+    setMessages([welcomeMessage])
+  }
+
+  const handleBack = () => {
+    setChatView("list")
+    setSelectedRoom(null)
+  }
+
+  const formatTime = (date: Date) => {
+    return date.toLocaleTimeString("ko-KR", { hour: "numeric", minute: "2-digit", hour12: true })
+  }
+
+  const handleQuickReply = (reply: QuickReply) => {
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: reply.label,
+      sender: "user",
+      timestamp: new Date(),
+      isRead: false,
+    }
+    setMessages((prev) => [...prev, userMessage])
+    setIsTyping(true)
+
+    setTimeout(() => {
+      let responseContent = ""
+      switch (reply.id) {
+        case "1":
+          responseContent =
+            "자주 묻는 질문 목록입니다:\n\n1. 배송은 얼마나 걸리나요?\n2. 반품/교환은 어떻게 하나요?\n3. 결제 방법은 무엇이 있나요?\n\n원하시는 항목 번호를 입력해 주세요."
+          break
+        case "2":
+          responseContent =
+            "이용 가이드를 안내해 드릴게요.\n\n서비스 이용 방법, 회원가입, 주문 방법 등 자세한 내용은 홈페이지 하단의 '이용안내'를 참고해 주세요."
+          break
+        case "3":
+          responseContent =
+            "상담원 연결을 요청하셨습니다.\n\n현재 대기 인원: 2명\n예상 대기 시간: 약 3분\n\n잠시만 기다려 주시면 상담원이 연결됩니다."
+          break
+        default:
+          responseContent = "네, 확인하겠습니다."
+      }
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: responseContent,
+        sender: "agent",
+        timestamp: new Date(),
+        isRead: true,
+        showFeedback: true,
+      }
+      setMessages((prev) => {
+        const updated = prev.map((m) => ({ ...m, isRead: true }))
+        return [...updated, botMessage]
+      })
+      setIsTyping(false)
+    }, 1200)
+  }
+
+  const handleFeedback = (messageId: string, type: "up" | "down") => {
+    setMessages((prev) =>
+      prev.map((m) => (m.id === messageId ? { ...m, feedbackGiven: type, showFeedback: false } : m)),
+    )
+
+    setTimeout(() => {
+      const thankYouMessage: Message = {
+        id: Date.now().toString(),
+        content:
+          type === "up"
+            ? "피드백 감사합니다! 더 좋은 서비스로 보답하겠습니다."
+            : "소중한 의견 감사합니다. 서비스 개선에 반영하겠습니다.",
+        sender: "system",
+        timestamp: new Date(),
+      }
+      setMessages((prev) => [...prev, thankYouMessage])
+    }, 500)
+  }
+
+  const handleSend = () => {
+    if (!inputValue.trim()) return
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputValue,
+      sender: "user",
+      timestamp: new Date(),
+      isRead: false,
+    }
+
+    setMessages((prev) => [...prev, userMessage])
+    setInputValue("")
+    setIsTyping(true)
+
+    if (inputRef.current) {
+      inputRef.current.style.height = "auto"
+    }
+
+    setTimeout(() => {
+      const botResponses = [
+        "네, 확인하겠습니다. 잠시만 기다려 주십시오.",
+        "해당 내용에 대해 안내해 드리겠습니다.",
+        "말씀하신 내용을 접수하였습니다. 담당자가 확인 후 안내드리겠습니다.",
+        "추가 문의 사항이 있으시면 말씀해 주십시오.",
+      ]
+      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)]
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: randomResponse,
+        sender: "agent",
+        timestamp: new Date(),
+        isRead: true,
+        showFeedback: true,
+      }
+      setMessages((prev) => {
+        const updated = prev.map((m) => ({ ...m, isRead: true }))
+        return [...updated, botMessage]
+      })
+      setIsTyping(false)
+    }, 1000)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleSend()
+    }
+  }
+
+  const handleHomeInputSend = () => {
+    if (!inputValue.trim()) return
+
+    setActiveTab("chat")
+    setChatView("detail")
+    setSelectedRoom({
+      id: "new",
+      name: "AI 상담 도우미",
+      avatar: "AI",
+      avatarStyle: "bg-gradient-to-br from-[#667eea] to-[#764ba2]",
+      lastMessage: "",
+      time: "",
+      unread: false,
+      status: "online",
+    })
+
+    const userMessage: Message = {
+      id: Date.now().toString(),
+      content: inputValue,
+      sender: "user",
+      timestamp: new Date(),
+      isRead: false,
+    }
+    setMessages([welcomeMessage, userMessage])
+    setInputValue("")
+    setIsTyping(true)
+
+    setTimeout(() => {
+      const botResponses = [
+        "네, 확인하겠습니다. 잠시만 기다려 주십시오.",
+        "해당 내용에 대해 안내해 드리겠습니다.",
+        "말씀하신 내용을 접수하였습니다. 담당자가 확인 후 안내드리겠습니다.",
+      ]
+      const randomResponse = botResponses[Math.floor(Math.random() * botResponses.length)]
+
+      const botMessage: Message = {
+        id: (Date.now() + 1).toString(),
+        content: randomResponse,
+        sender: "agent",
+        timestamp: new Date(),
+        isRead: true,
+        showFeedback: true,
+      }
+      setMessages((prev) => {
+        const updated = prev.map((m) => ({ ...m, isRead: true }))
+        return [...updated, botMessage]
+      })
+      setIsTyping(false)
+    }, 1000)
+  }
+
+  const handleHomeKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault()
+      handleHomeInputSend()
+    }
+  }
+
+  const totalUnread = rooms.filter((r) => r.unread).length
+
+  const handleSaveEdit = (roomId: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setRooms((prev) => prev.map((room) => (room.id === roomId ? { ...room, name: editingName } : room)))
+    setEditingRoomId(null)
+    setEditingName("")
+  }
+
+  const handleStartEdit = (room: ChatRoom, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setEditingRoomId(room.id)
+    setEditingName(room.name)
+  }
+
+  const handleDeleteRoom = (roomId: string, e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation()
+    setRooms((prev) => prev.filter((room) => room.id !== roomId))
+    if (selectedRoom && selectedRoom.id === roomId) {
+      setSelectedRoom(null)
+      setChatView("list")
+    }
+  }
+
+  const renderHomeTab = () => (
+    <div className="flex h-full flex-col bg-white">
+      <div className="flex flex-1 flex-col items-center justify-center p-8">
+        <p className="text-center text-xl font-medium text-[#191919]">안녕하세요</p>
+        <p className="mt-1 text-center text-xl font-medium text-[#191919]">무엇을 도와드릴까요?</p>
+      </div>
+      <div className="border-t border-[#f0f0f0] bg-white px-4 py-3">
+        <div className="relative flex items-end">
+          <button className="absolute bottom-1.5 left-3 flex h-7 w-7 items-center justify-center rounded-full text-[#999] transition-colors hover:bg-[#e8e8e8]">
+            <Paperclip className="h-[18px] w-[18px]" />
+          </button>
+          <textarea
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleHomeKeyDown}
+            placeholder="메시지를 입력하세요"
+            rows={1}
+            className="w-full resize-none rounded-full bg-[#f5f5f5] py-2.5 pl-12 pr-11 text-[14px] text-[#191919] outline-none transition-colors placeholder:text-[#999] focus:bg-[#f0f0f0]"
+            style={{ maxHeight: "120px" }}
+          />
+          <button
+            onClick={handleHomeInputSend}
+            disabled={!inputValue.trim()}
+            className={cn(
+              "absolute bottom-1 right-1.5 flex h-8 w-8 items-center justify-center rounded-full transition-all",
+              inputValue.trim() ? "bg-[#191919] text-white hover:bg-[#333]" : "bg-transparent text-[#ccc]",
+            )}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderChatListTab = () => (
+    <div className="flex h-full flex-col">
+      <div className="flex items-center justify-between border-b border-[#f0f0f0] bg-white px-6 py-5">
+        <h2 className="text-xl font-semibold text-[#191919]">대화</h2>
+        <button
+          onClick={() => setIsManaging(!isManaging)}
+          className={cn(
+            "flex h-9 items-center gap-2 rounded-full px-4 text-sm font-medium transition-all",
+            isManaging ? "bg-[#667eea] text-white hover:bg-[#5a6fd6]" : "bg-[#f5f5f5] text-[#666] hover:bg-[#eee]",
+          )}
+        >
+          {isManaging ? (
+            <>
+              <Check className="h-4 w-4" />
+              완료
+            </>
+          ) : (
+            <>
+              <Settings2 className="h-4 w-4" />
+              관리
+            </>
+          )}
+        </button>
+      </div>
+      <div className="relative flex-1 overflow-y-auto pb-20">
+        {rooms.length > 0 ? (
+          rooms.map((room) => (
+            <div
+              key={room.id}
+              onClick={() => !isManaging && handleRoomClick(room)}
+              className={cn(
+                "flex items-center gap-4 border-b border-[#f5f5f5] px-6 py-4 transition-colors",
+                !isManaging && "cursor-pointer hover:bg-[#fafafa]",
+              )}
+            >
+              <div className="relative">
+                <div
+                  className={cn(
+                    "flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-sm font-semibold text-white",
+                    room.avatarStyle,
+                  )}
+                >
+                  {room.avatar}
+                </div>
+                {!isManaging && (
+                  <span
+                    className={cn(
+                      "absolute -bottom-0.5 -right-0.5 h-3.5 w-3.5 rounded-full border-2 border-white",
+                      room.status === "online"
+                        ? "bg-[#22c55e]"
+                        : room.status === "busy"
+                          ? "bg-[#f59e0b]"
+                          : "bg-[#9ca3af]",
+                    )}
+                  />
+                )}
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="mb-1 flex items-center justify-between">
+                  {editingRoomId === room.id ? (
+                    <input
+                      type="text"
+                      value={editingName}
+                      onChange={(e) => setEditingName(e.target.value)}
+                      onClick={(e) => e.stopPropagation()}
+                      className="w-full rounded-lg border border-[#ddd] px-2 py-1 text-[15px] font-semibold text-[#191919] outline-none focus:border-[#667eea]"
+                      autoFocus
+                    />
+                  ) : (
+                    <span className="text-[15px] font-semibold text-[#191919]">{room.name}</span>
+                  )}
+                  {!isManaging && <span className="text-xs text-[#999]">{room.time}</span>}
+                </div>
+                {!editingRoomId || editingRoomId !== room.id ? (
+                  <p className={cn("truncate text-sm", room.unread ? "font-medium text-[#191919]" : "text-[#666]")}>
+                    {room.lastMessage}
+                  </p>
+                ) : null}
+              </div>
+              {isManaging ? (
+                <div className="flex items-center gap-2">
+                  {editingRoomId === room.id ? (
+                    <button
+                      onClick={(e) => handleSaveEdit(room.id, e)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#22c55e] text-white transition-all hover:bg-[#16a34a]"
+                    >
+                      <Check className="h-4 w-4" />
+                    </button>
+                  ) : (
+                    <button
+                      onClick={(e) => handleStartEdit(room, e)}
+                      className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f5f5f5] text-[#666] transition-all hover:bg-[#eee]"
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </button>
+                  )}
+                  <button
+                    onClick={(e) => handleDeleteRoom(room.id, e)}
+                    className="flex h-8 w-8 items-center justify-center rounded-full bg-[#fee2e2] text-[#ef4444] transition-all hover:bg-[#fecaca]"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
+              ) : (
+                room.unread && <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-[#667eea]" />
+              )}
+            </div>
+          ))
+        ) : (
+          <div className="flex flex-1 flex-col items-center justify-center p-8 text-center">
+            <div className="mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f5f5f5]">
+              <MessageSquare className="h-7 w-7 text-[#999]" />
+            </div>
+            <p className="text-[#666]">아직 대화가 없습니다</p>
+          </div>
+        )}
+        <div className="absolute bottom-4 left-0 right-0 flex justify-center">
+          <button
+            onClick={handleNewChat}
+            className="flex h-12 items-center gap-2 rounded-full bg-[#191919] px-6 text-sm font-medium text-white shadow-lg transition-all hover:bg-[#333] hover:shadow-xl"
+          >
+            <Plus className="h-5 w-5" />새 대화
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderChatDetail = () => (
+    <div className="flex h-full flex-col bg-white">
+      {/* 상단 탭바 - 리스트 화면과 동일 */}
+      <div className="flex border-b border-[#e5e5e5] bg-[#fafafa]">
+        <button
+          onClick={() => {
+            handleBack()
+            setActiveTab("home")
+          }}
+          className={cn(
+            "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors",
+            "text-[#888] hover:text-[#666]",
+          )}
+        >
+          <Home className="h-3.5 w-3.5" />홈
+        </button>
+        <button
+          onClick={handleBack}
+          className={cn(
+            "relative flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors",
+            "border-b-2 border-[#191919] bg-white text-[#191919]",
+          )}
+        >
+          <MessageSquare className="h-3.5 w-3.5" />
+          대화
+        </button>
+      </div>
+
+      {/* 대화방 헤더 */}
+      <div className="flex items-center gap-3 border-b border-[#f0f0f0] bg-white px-4 py-3">
+        <button
+          onClick={handleBack}
+          className="flex h-8 w-8 items-center justify-center rounded-full text-[#666] transition-colors hover:bg-[#f5f5f5]"
+        >
+          <ChevronLeft className="h-5 w-5" />
+        </button>
+        <div className="flex flex-1 items-center gap-2.5">
+          <div
+            className={cn(
+              "flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold text-white",
+              selectedRoom?.avatarStyle,
+            )}
+          >
+            {selectedRoom?.avatar}
+          </div>
+          <div>
+            <div className="text-[14px] font-semibold text-[#191919]">{selectedRoom?.name}</div>
+            <div className="text-[12px] text-[#22c55e]">온라인</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="flex flex-1 flex-col gap-4 overflow-y-auto bg-white px-4 py-5">
+        {messages.map((message) => (
+          <div key={message.id}>
+            {message.sender === "system" ? (
+              <div className="flex justify-center py-2">
+                <span className="rounded-full bg-[#f5f5f5] px-4 py-1.5 text-xs text-[#666]">{message.content}</span>
+              </div>
+            ) : (
+              <div
+                className={cn(
+                  "flex gap-2.5 animate-[fadeIn_0.3s_ease]",
+                  message.sender === "user" ? "flex-row-reverse" : "",
+                )}
+              >
+                {message.sender === "agent" && (
+                  <div
+                    className={cn(
+                      "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white",
+                      selectedRoom?.avatarStyle,
+                    )}
+                  >
+                    {selectedRoom?.avatar}
+                  </div>
+                )}
+                <div className={cn("max-w-[75%]", message.sender === "user" && "flex flex-col items-end")}>
+                  <div
+                    className={cn(
+                      "whitespace-pre-wrap rounded-2xl px-4 py-2.5 text-[14px] leading-relaxed",
+                      message.sender === "user" ? "bg-[#191919] text-white" : "bg-[#f5f5f5] text-[#191919]",
+                    )}
+                  >
+                    {message.content}
+                  </div>
+                  <div className="mt-1 flex items-center gap-1.5">
+                    <span className="text-[11px] text-[#aaa]">{formatTime(message.timestamp)}</span>
+                    {message.sender === "user" &&
+                      (message.isRead ? (
+                        <CheckCheck className="h-3 w-3 text-[#667eea]" />
+                      ) : (
+                        <Check className="h-3 w-3 text-[#aaa]" />
+                      ))}
+                  </div>
+                  {message.showFeedback && message.sender === "agent" && (
+                    <div className="mt-1.5 flex items-center gap-1">
+                      <span className="mr-1 text-[11px] text-[#aaa]">도움이 되었나요?</span>
+                      <button
+                        onClick={() => handleFeedback(message.id, "up")}
+                        className="rounded-full p-1 text-[#aaa] transition-colors hover:bg-[#f0f0f0] hover:text-[#22c55e]"
+                      >
+                        <ThumbsUp className="h-3 w-3" />
+                      </button>
+                      <button
+                        onClick={() => handleFeedback(message.id, "down")}
+                        className="rounded-full p-1 text-[#aaa] transition-colors hover:bg-[#f0f0f0] hover:text-[#ef4444]"
+                      >
+                        <ThumbsDown className="h-3 w-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        ))}
+        {isTyping && (
+          <div className="flex gap-2.5">
+            <div
+              className={cn(
+                "flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-xs font-semibold text-white",
+                selectedRoom?.avatarStyle,
+              )}
+            >
+              {selectedRoom?.avatar}
+            </div>
+            <div className="flex items-center gap-1 rounded-2xl bg-[#f5f5f5] px-4 py-2.5">
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#999] [animation-delay:-0.3s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#999] [animation-delay:-0.15s]" />
+              <span className="h-1.5 w-1.5 animate-bounce rounded-full bg-[#999]" />
+            </div>
+          </div>
+        )}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {messages.length <= 1 && (
+        <div className="flex flex-wrap gap-2 border-t border-[#f0f0f0] bg-white px-4 py-3">
+          {quickReplies.map((reply) => (
+            <button
+              key={reply.id}
+              onClick={() => handleQuickReply(reply)}
+              className="flex items-center gap-1.5 rounded-full bg-[#f5f5f5] px-3 py-2 text-[13px] text-[#666] transition-all hover:bg-[#eee]"
+            >
+              {reply.icon}
+              {reply.label}
+            </button>
+          ))}
+        </div>
+      )}
+
+      <div className="border-t border-[#f0f0f0] bg-white px-4 py-3">
+        <div className="relative flex items-end">
+          <button className="absolute bottom-1.5 left-3 flex h-7 w-7 items-center justify-center rounded-full text-[#999] transition-colors hover:bg-[#e8e8e8]">
+            <Paperclip className="h-[18px] w-[18px]" />
+          </button>
+          <textarea
+            ref={inputRef}
+            value={inputValue}
+            onChange={(e) => setInputValue(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="메시지를 입력하세요"
+            rows={1}
+            className="w-full resize-none rounded-full bg-[#f5f5f5] py-2.5 pl-12 pr-11 text-[14px] text-[#191919] outline-none transition-colors placeholder:text-[#999] focus:bg-[#f0f0f0]"
+            style={{ maxHeight: "120px" }}
+          />
+          <button
+            onClick={handleSend}
+            disabled={!inputValue.trim()}
+            className={cn(
+              "absolute bottom-1 right-1.5 flex h-8 w-8 items-center justify-center rounded-full transition-all",
+              inputValue.trim() ? "bg-[#191919] text-white hover:bg-[#333]" : "bg-transparent text-[#ccc]",
+            )}
+          >
+            <Send className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+
+  const renderContent = () => {
+    if (chatView === "detail" && selectedRoom) {
+      return renderChatDetail()
+    }
+
+    switch (activeTab) {
+      case "home":
+        return renderHomeTab()
+      case "chat":
+        return renderChatListTab()
+      default:
+        return renderHomeTab()
+    }
+  }
+
+  return (
+    <>
+      <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end gap-3">
+        {showBubble && !isOpen && (
+          <div className="animate-[fadeIn_0.3s_ease] rounded-xl bg-white px-4 py-3 text-sm text-[#191919] shadow-lg">
+            안녕하세요! 무엇을 도와드릴까요?
+          </div>
+        )}
+        <button
+          onClick={() => setIsOpen(!isOpen)}
+          className="group relative flex h-14 w-14 items-center justify-center rounded-full bg-[#191919] text-white shadow-lg transition-all hover:scale-105"
+        >
+          {totalUnread > 0 && !isOpen && (
+            <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-[#ef4444] text-xs font-bold text-white">
+              {totalUnread}
+            </span>
+          )}
+        </button>
+      </div>
+      {isOpen && (
+        <div className="fixed bottom-24 right-6 z-50 flex h-[600px] w-[380px] flex-col overflow-hidden rounded-2xl bg-white shadow-2xl animate-[slideUp_0.3s_ease]">
+          {chatView === "list" && (
+            <div className="flex border-b border-[#e5e5e5] bg-[#fafafa]">
+              <button
+                onClick={() => setActiveTab("home")}
+                className={cn(
+                  "flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors",
+                  activeTab === "home"
+                    ? "border-b-2 border-[#191919] bg-white text-[#191919]"
+                    : "text-[#888] hover:text-[#666]",
+                )}
+              >
+                <Home className="h-3.5 w-3.5" />홈
+              </button>
+              <button
+                onClick={() => setActiveTab("chat")}
+                className={cn(
+                  "relative flex flex-1 items-center justify-center gap-1.5 py-2.5 text-xs font-medium transition-colors",
+                  activeTab === "chat"
+                    ? "border-b-2 border-[#191919] bg-white text-[#191919]"
+                    : "text-[#888] hover:text-[#666]",
+                )}
+              >
+                <MessageSquare className="h-3.5 w-3.5" />
+                대화
+                {totalUnread > 0 && (
+                  <span className="ml-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#ef4444] text-[10px] font-bold text-white">
+                    {totalUnread}
+                  </span>
+                )}
+              </button>
+            </div>
+          )}
+          <div className="flex-1 overflow-hidden">
+            {chatView === "list" ? (
+              <>
+                {activeTab === "home" && renderHomeTab()}
+                {activeTab === "chat" && renderChatListTab()}
+              </>
+            ) : (
+              renderChatDetail()
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
