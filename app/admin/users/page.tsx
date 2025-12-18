@@ -19,7 +19,7 @@ const roleConfig: Record<string, { label: string; icon: any; color: string }> = 
   user: { label: "사용자", icon: Shield, color: "text-[#71717a] bg-[#27272a] border-[#3f3f46]" },
 }
 
-const statusConfig = {
+const statusConfig: Record<string, { label: string; color: string }> = {
   active: { label: "활성", color: "text-emerald-400 bg-emerald-500/10" },
   inactive: { label: "비활성", color: "text-[#52525b] bg-[#27272a]" },
   pending: { label: "대기중", color: "text-amber-400 bg-amber-500/10" },
@@ -56,7 +56,7 @@ export default function UsersPage() {
       setAlert({ title: "성공", message: "사용자가 생성되었습니다", type: "success" })
       await loadUsers()
     } else {
-      throw new Error(res.error || "사용자 생성에 실패했습니다")
+      throw new Error("사용자 생성에 실패했습니다")
     }
   }
 
@@ -68,7 +68,7 @@ export default function UsersPage() {
       setAlert({ title: "성공", message: "사용자가 삭제되었습니다", type: "success" })
       await loadUsers()
     } else {
-      setAlert({ title: "오류", message: res.error || "사용자 삭제에 실패했습니다", type: "error" })
+      setAlert({ title: "오류", message: "사용자 삭제에 실패했습니다", type: "error" })
     }
   }
 
