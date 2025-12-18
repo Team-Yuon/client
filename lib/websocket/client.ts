@@ -94,9 +94,9 @@ export class WebSocketClient {
           }
         }
 
-        this.ws.onerror = (error) => {
-          console.error("WebSocket error:", error)
-          reject(error)
+        this.ws.onerror = () => {
+          // WebSocket error - will be handled by onclose
+          reject(new Error("WebSocket connection failed"))
         }
 
         this.ws.onclose = () => {

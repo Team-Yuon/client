@@ -166,12 +166,13 @@ export default function VectorsPage() {
       console.log("Similar documents response:", response)
 
       if (response.success && response.data) {
-        const data = response.data as { documents?: Array<{ id: string; content: string; score: number; metadata?: Record<string, unknown> }> }
-        if (data.documents && data.documents.length > 0) {
-          const similar: VectorDoc[] = data.documents
+        const data = response.data as { vectors?: Array<{ id: string; content: string; metadata?: Record<string, unknown> }> }
+        if (data.vectors && data.vectors.length > 0) {
+          const similar: VectorDoc[] = data.vectors
             .filter(doc => doc.id !== selectedDoc) // 자기 자신 제외
             .map((doc) => {
               const metadata = doc.metadata || {}
+              const score = typeof metadata.score === 'number' ? metadata.score : 0
               return {
                 id: doc.id,
                 title: (metadata as { title?: string }).title || doc.content.slice(0, 30) || `문서 ${doc.id}`,
@@ -179,7 +180,7 @@ export default function VectorsPage() {
                 chunks: 1,
                 dimensions: 1536,
                 createdAt: new Date().toISOString().split("T")[0],
-                similarity: doc.score || 0,
+                similarity: score,
                 x: 0,
                 y: 0,
                 content: doc.content || "",

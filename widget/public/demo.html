@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YUON Chat Widget Demo</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+
+    .container {
+      max-width: 800px;
+      width: 100%;
+      background: white;
+      border-radius: 16px;
+      padding: 48px;
+      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    }
+
+    h1 {
+      font-size: 32px;
+      font-weight: 700;
+      margin-bottom: 16px;
+      color: #1f2937;
+    }
+
+    p {
+      font-size: 16px;
+      color: #6b7280;
+      margin-bottom: 32px;
+      line-height: 1.6;
+    }
+
+    .config-section {
+      background: #f9fafb;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    .config-section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: #1f2937;
+      margin-bottom: 16px;
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+
+    label {
+      display: block;
+      font-size: 14px;
+      font-weight: 500;
+      color: #374151;
+      margin-bottom: 6px;
+    }
+
+    input[type="text"],
+    select {
+      width: 100%;
+      padding: 10px 14px;
+      border: 1px solid #d1d5db;
+      border-radius: 8px;
+      font-size: 14px;
+      transition: border-color 0.2s;
+    }
+
+    input[type="text"]:focus,
+    select:focus {
+      outline: none;
+      border-color: #3b82f6;
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    .button-group {
+      display: flex;
+      gap: 12px;
+      margin-top: 24px;
+    }
+
+    button {
+      flex: 1;
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+
+    .btn-primary {
+      background: #3b82f6;
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: #2563eb;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+    }
+
+    .btn-secondary {
+      background: #e5e7eb;
+      color: #374151;
+    }
+
+    .btn-secondary:hover {
+      background: #d1d5db;
+    }
+
+    .code-section {
+      background: #1f2937;
+      border-radius: 12px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+
+    .code-section h2 {
+      font-size: 18px;
+      font-weight: 600;
+      color: white;
+      margin-bottom: 16px;
+    }
+
+    pre {
+      background: #111827;
+      color: #e5e7eb;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    code {
+      font-family: 'Monaco', 'Courier New', monospace;
+    }
+
+    .status {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+
+    .status.online {
+      background: #d1fae5;
+      color: #065f46;
+    }
+
+    .status.offline {
+      background: #fee2e2;
+      color: #991b1b;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>
+      YUON Chat Widget
+      <span class="status online">Demo</span>
+    </h1>
+    <p>
+      아래 설정을 변경하여 채팅 위젯을 커스터마이징할 수 있습니다.
+      우측 하단의 채팅 버튼을 클릭하여 테스트해보세요!
+    </p>
+
+    <div class="config-section">
+      <h2>⚙️ 위젯 설정</h2>
+
+      <div class="form-group">
+        <label for="apiUrl">API URL</label>
+        <input type="text" id="apiUrl" value="http://localhost:8080/api/v1">
+      </div>
+
+      <div class="form-group">
+        <label for="wsUrl">WebSocket URL</label>
+        <input type="text" id="wsUrl" value="ws://localhost:8080/api/v1/ws">
+      </div>
+
+      <div class="form-group">
+        <label for="theme">테마</label>
+        <select id="theme">
+          <option value="dark">Dark</option>
+          <option value="light">Light</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="position">위치</label>
+        <select id="position">
+          <option value="right">Right</option>
+          <option value="left">Left</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label for="primaryColor">Primary Color</label>
+        <input type="text" id="primaryColor" value="#3b82f6">
+      </div>
+
+      <div class="form-group">
+        <label for="welcomeMessage">환영 메시지</label>
+        <input type="text" id="welcomeMessage" value="안녕하세요! 무엇을 도와드릴까요?">
+      </div>
+
+      <div class="button-group">
+        <button class="btn-primary" onclick="initWidget()">위젯 초기화</button>
+        <button class="btn-secondary" onclick="destroyWidget()">위젯 제거</button>
+      </div>
+    </div>
+
+    <div class="code-section">
+      <h2>📝 사용 방법</h2>
+      <pre><code>&lt;!-- 1. 스크립트 로드 --&gt;
+&lt;script src="https://your-cdn.com/yuon-widget.js"&gt;&lt;/script&gt;
+
+&lt;!-- 2. 초기화 --&gt;
+&lt;script&gt;
+  YuonChat.init({
+    apiUrl: 'https://api.yourdomain.com/api/v1',
+    wsUrl: 'wss://api.yourdomain.com/api/v1/ws',
+    theme: 'dark',
+    position: 'right',
+    primaryColor: '#3b82f6',
+    welcomeMessage: '안녕하세요! 무엇을 도와드릴까요?'
+  })
+&lt;/script&gt;</code></pre>
+    </div>
+  </div>
+
+  <!-- 위젯 스크립트 로드 (빌드 후) -->
+  <script src="../dist/yuon-widget.js"></script>
+
+  <script>
+    // 위젯 초기화 함수
+    function initWidget() {
+      const config = {
+        apiUrl: document.getElementById('apiUrl').value,
+        wsUrl: document.getElementById('wsUrl').value,
+        theme: document.getElementById('theme').value,
+        position: document.getElementById('position').value,
+        primaryColor: document.getElementById('primaryColor').value,
+        welcomeMessage: document.getElementById('welcomeMessage').value,
+      }
+
+      if (window.YuonChat) {
+        window.YuonChat.init(config)
+        console.log('Widget initialized with config:', config)
+      } else {
+        alert('위젯 스크립트를 먼저 빌드해주세요: npm run build')
+      }
+    }
+
+    // 위젯 제거 함수
+    function destroyWidget() {
+      if (window.YuonChat) {
+        window.YuonChat.destroy()
+        console.log('Widget destroyed')
+      }
+    }
+
+    // 페이지 로드 시 자동 초기화
+    window.addEventListener('load', () => {
+      setTimeout(() => {
+        if (window.YuonChat) {
+          initWidget()
+        }
+      }, 500)
+    })
+  </script>
+</body>
+</html>
