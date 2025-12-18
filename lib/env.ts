@@ -3,9 +3,9 @@
  */
 
 export const env = {
-  apiUrl: process.env.NEXT_PUBLIC_API_URL || "http://localhost:8080/api/v1",
-  wsUrl: process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8080/api/v1/ws",
-  appEnv: process.env.NEXT_PUBLIC_APP_ENV || "development",
+  apiUrl: process.env.NEXT_PUBLIC_API_URL || "https://yuon-api.dsmhs.kr/api/v1",
+  wsUrl: process.env.NEXT_PUBLIC_WS_URL || "wss://yuon-api.dsmhs.kr/api/v1/ws",
+  appEnv: process.env.NEXT_PUBLIC_APP_ENV || "production",
   isDevelopment: process.env.NEXT_PUBLIC_APP_ENV === "development" || process.env.NODE_ENV === "development",
   isProduction: process.env.NEXT_PUBLIC_APP_ENV === "production" || process.env.NODE_ENV === "production",
 } as const
