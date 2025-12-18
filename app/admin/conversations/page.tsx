@@ -68,7 +68,8 @@ export default function ConversationsPage() {
       }
       await loadConversations()
     } else {
-      setAlert({ title: "오류", message: res.error || "대화 삭제에 실패했습니다", type: "error" })
+      const errorMessage = typeof res.error === 'string' ? res.error : res.error?.message || "대화 삭제에 실패했습니다"
+      setAlert({ title: "오류", message: errorMessage, type: "error" })
     }
   }
 
