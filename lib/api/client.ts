@@ -4,7 +4,7 @@
 
 import type { ApiResponse } from "@/lib/types"
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://yuon-api.dsmhs.kr/api/v1"
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "https://yuon-api.dsmhs.kr/api/v1"
 
 class ApiClient {
   private baseUrl: string
